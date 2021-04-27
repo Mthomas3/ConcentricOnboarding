@@ -61,7 +61,8 @@ public struct ConcentricOnboardingView : View {
     let pages: [AnyView]
     let bgColors: [Color]
     let duration: Double // in seconds
-
+    let buttonBgColors: [Color]
+    
     @ObservedObject var currentIndex = ObservableInt()
     @ObservedObject var nextIndex = ObservableInt(1)
     @ObservedObject var isAnimating = ObservableBool()
@@ -70,15 +71,17 @@ public struct ConcentricOnboardingView : View {
     @State var progress: Double = 0
     @State var bgColor = Color.white
     @State var circleColor = Color.white
+    @State var buttonBgColor = Color.white
 
     @State var shape = AnyView(Circle())
     let nextIcon: String // the default icon is "chevron.forward", use constructor argument to change
 
-    public init(pages: [AnyView], bgColors: [Color], duration: Double = 1.0, nextIcon: String = "chevron.forward") {
+    public init(pages: [AnyView], bgColors: [Color], duration: Double = 1.0, nextIcon: String = "chevron.forward", _ buttonBgColors: [Color] = []) {
         self.pages = pages
         self.bgColors = bgColors
         self.duration = duration
         self.nextIcon = nextIcon
+        self.buttonBgColors = buttonBgColors
     }
 
     func viewWillAppear() {
@@ -188,12 +191,12 @@ public struct ConcentricOnboardingView : View {
         progress += step
         if progress < limit {
             bgColor = bgColors[currentIndex.value]
-            circleColor = bgColors[nextIndex.value]
+            circleColor = buttonBgColors.count > 0 ? buttonBgColors[currentIndex.value] : bgColors[currentIndex.value]
             shape = createGrowingShape(progress)
         }
         else if progress < 2*limit {
             bgColor = bgColors[nextIndex.value]
-            circleColor = bgColors[currentIndex.value]
+            circleColor = buttonBgColors.count > 0 ? buttonBgColors[currentIndex.value] : bgColors[currentIndex.value]
             shape = createShrinkingShape(progress - limit)
         }
         else {
@@ -208,12 +211,12 @@ public struct ConcentricOnboardingView : View {
         let backwardProgress = 2*limit - progress
         if progress < limit {
             bgColor = bgColors[currentIndex.value]
-            circleColor = bgColors[nextIndex.value]
+            circleColor = buttonBgColors.count > 0 ? buttonBgColors[currentIndex.value] : bgColors[currentIndex.value]
             shape = createShrinkingShape(backwardProgress - limit)
         }
         else if progress < 2*limit {
             bgColor = bgColors[nextIndex.value]
-            circleColor = bgColors[currentIndex.value]
+            circleColor = buttonBgColors.count > 0 ? buttonBgColors[currentIndex.value] : bgColors[currentIndex.value]
             shape = createGrowingShape(backwardProgress)
         }
         else {
