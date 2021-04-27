@@ -61,7 +61,7 @@ public struct ConcentricOnboardingView : View {
     let pages: [AnyView]
     let bgColors: [Color]
     let duration: Double // in seconds
-    let buttonBgColors: [Color]
+    let buttonBgColors: [Color]? //Use different color on the background next button than the next color
     
     @ObservedObject var currentIndex = ObservableInt()
     @ObservedObject var nextIndex = ObservableInt(1)
@@ -71,17 +71,16 @@ public struct ConcentricOnboardingView : View {
     @State var progress: Double = 0
     @State var bgColor = Color.white
     @State var circleColor = Color.white
-    @State var buttonBgColor = Color.white
 
     @State var shape = AnyView(Circle())
     let nextIcon: String // the default icon is "chevron.forward", use constructor argument to change
 
-    public init(pages: [AnyView], bgColors: [Color], duration: Double = 1.0, nextIcon: String = "chevron.forward", _ buttonBgColors: [Color] = []) {
+    public init(pages: [AnyView], bgColors: [Color], duration: Double = 1.0, nextIcon: String = "chevron.forward", customButtonColors: [Color]? = nil) {
         self.pages = pages
         self.bgColors = bgColors
         self.duration = duration
         self.nextIcon = nextIcon
-        self.buttonBgColors = buttonBgColors
+        self.buttonBgColors = customButtonColors
     }
 
     func viewWillAppear() {
@@ -94,12 +93,16 @@ public struct ConcentricOnboardingView : View {
         if bgColors.count < 2 {
             print("Add more bg colors")
         }
+        
+        if buttonBgColors?.count ?? 0 > 0 && buttonBgColors?.count ?? 0 < pages.count {
+            print("Add more button bg colors")
+        }
 
         if bgColors.count > currentIndex.value {
             bgColor = bgColors[currentIndex.value]
         }
         if bgColors.count > nextIndex.value {
-            circleColor = bgColors[nextIndex.value]
+            circleColor = buttonBgColors?[currentIndex.value] ?? bgColors[nextIndex.value]
         }
         let width = CGFloat(radius * 2)
         shape = AnyView(Circle().foregroundColor(circleColor).frame(width: width, height: width, alignment: .center))
@@ -191,12 +194,16 @@ public struct ConcentricOnboardingView : View {
         progress += step
         if progress < limit {
             bgColor = bgColors[currentIndex.value]
-            circleColor = buttonBgColors.count > 0 ? buttonBgColors[currentIndex.value] : bgColors[currentIndex.value]
+            if buttonBgColors == nil {
+                circleColor = bgColors[nextIndex.value]
+            }
             shape = createGrowingShape(progress)
         }
         else if progress < 2*limit {
             bgColor = bgColors[nextIndex.value]
-            circleColor = buttonBgColors.count > 0 ? buttonBgColors[currentIndex.value] : bgColors[currentIndex.value]
+            if buttonBgColors == nil {
+                circleColor = bgColors[currentIndex.value]
+            }
             shape = createShrinkingShape(progress - limit)
         }
         else {
@@ -211,12 +218,16 @@ public struct ConcentricOnboardingView : View {
         let backwardProgress = 2*limit - progress
         if progress < limit {
             bgColor = bgColors[currentIndex.value]
-            circleColor = buttonBgColors.count > 0 ? buttonBgColors[currentIndex.value] : bgColors[currentIndex.value]
+            if buttonBgColors == nil {
+                circleColor = bgColors[nextIndex.value]
+            }
             shape = createShrinkingShape(backwardProgress - limit)
         }
         else if progress < 2*limit {
             bgColor = bgColors[nextIndex.value]
-            circleColor = buttonBgColors.count > 0 ? buttonBgColors[currentIndex.value] : bgColors[currentIndex.value]
+            if buttonBgColors == nil {
+                circleColor = bgColors[currentIndex.value]
+            }
             shape = createGrowingShape(backwardProgress)
         }
         else {
@@ -256,10 +267,9 @@ public struct ConcentricOnboardingView : View {
 
     func updateColors() {
         let width = CGFloat(radius * 2)
+        shape = AnyView(Circle().foregroundColor(buttonBgColors?[currentIndex.value] != nil ? (buttonBgColors?[currentIndex.value] ?? bgColors[nextIndex.value]) : circleColor).frame(width: width, height: width, alignment: .center))
         shape = AnyView(Circle().foregroundColor(circleColor).frame(width: width, height: width, alignment: .center))
-
         bgColor = bgColors[currentIndex.value]
-        circleColor = bgColors[nextIndex.value]
     }
 
     func goToNextPageAnimated() {
